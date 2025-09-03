@@ -70,6 +70,39 @@
   const app = firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+// --- Login ---
+  const loginForm = document.getElementById("loginForm");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const addForm = document.getElementById("addForm");
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      alert("Greška pri logovanju: " + err.message);
+    }
+  });
+
+  logoutBtn.addEventListener("click", () => auth.signOut());
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      loginForm.style.display = "none";
+      logoutBtn.style.display = "block";
+      addForm.style.display = "block";
+      loadItems();
+    } else {
+      loginForm.style.display = "block";
+      logoutBtn.style.display = "none";
+      addForm.style.display = "none";
+      document.getElementById("itemsList").innerHTML = "";
+    }
+  });
+
+  
   // Cloudinary widget
   let uploadedImageURL = "";
   const myWidget = cloudinary.createUploadWidget({
@@ -140,3 +173,4 @@
 
 </body>
 </html>
+
