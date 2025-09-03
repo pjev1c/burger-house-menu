@@ -7,13 +7,25 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 </head>
 <body class="bg-light">
 <div class="container py-4">
   <h2 class="mb-4">🔑 Admin Panel</h2>
 
+  <!-- Login forma -->
+  <form id="loginForm" class="card p-3 mb-4 shadow-sm">
+    <h5>Prijava</h5>
+    <input id="email" class="form-control mb-2" placeholder="Email" type="email" required>
+    <input id="password" class="form-control mb-2" placeholder="Lozinka" type="password" required>
+    <button class="btn btn-primary w-100">Uloguj se</button>
+  </form>
+
+  <button id="logoutBtn" class="btn btn-secondary mb-4" style="display:none;">Izloguj se</button>
+
   <!-- Forma za dodavanje itema -->
-  <form id="addForm" class="card p-3 mb-4 shadow-sm">
+  <form id="addForm" class="card p-3 mb-4 shadow-sm" style="display:none;">
     <h5>Dodaj novi item</h5>
     <select id="category" class="form-select mb-2">
       <option value="food">Hrana</option>
@@ -21,7 +33,7 @@
     </select>
     <input id="name" class="form-control mb-2" placeholder="Naziv" required>
     <input id="price" class="form-control mb-2" placeholder="Cena (RSD)" required>
-    <input id="image" class="form-control mb-2" placeholder="URL slike">
+    <input id="imageFile" class="form-control mb-2" type="file" accept="image/*">
     <textarea id="desc" class="form-control mb-2" placeholder="Opis"></textarea>
     <button class="btn btn-primary w-100">Dodaj</button>
   </form>
@@ -31,34 +43,75 @@
 </div>
 
 <script>
-  // --- Firebase config (isti kao u index.html) ---
+  // --- Firebase config ---
   const firebaseConfig = {
-  apiKey: "AIzaSyDqI-XnDj1zRNKweGg6yiRKAf8J8kgRrQo",
-  authDomain: "burger-house-ab51a.firebaseapp.com",
-  projectId: "burger-house-ab51a",
-  storageBucket: "burger-house-ab51a.appspot.com", // ispravljeno!
-  messagingSenderId: "31759588920",
-  appId: "1:31759588920:web:cbe71c854f3885073d50cd",
-  measurementId: "G-K4ZKX4RXP7"
-};
+    apiKey: "AIzaSyDqI-XnDj1zRNKweGg6yiRKAf8J8kgRrQo",
+    authDomain: "burger-house-ab51a.firebaseapp.com",
+    projectId: "burger-house-ab51a",
+    storageBucket: "burger-house-ab51a.appspot.com",
+    messagingSenderId: "31759588920",
+    appId: "1:31759588920:web:cbe71c854f3885073d50cd",
+    measurementId: "G-K4ZKX4RXP7"
+  };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  const auth = firebase.auth();
+  const storage = firebase.storage();
 
-  const form = document.getElementById("addForm");
-  form.addEventListener("submit", async (e) => {
+  // --- Login ---
+  const loginForm = document.getElementById("loginForm");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const addForm = document.getElementById("addForm");
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      alert("Greška pri logovanju: " + err.message);
+    }
+  });
+
+  logoutBtn.addEventListener("click", () => auth.signOut());
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      loginForm.style.display = "none";
+      logoutBtn.style.display = "block";
+      addForm.style.display = "block";
+      loadItems();
+    } else {
+      loginForm.style.display = "block";
+      logoutBtn.style.display = "none";
+      addForm.style.display = "none";
+      document.getElementById("itemsList").innerHTML = "";
+    }
+  });
+
+  // --- Dodavanje itema ---
+  addForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const category = document.getElementById("category").value;
-    const newItem = {
-      name: document.getElementById("name").value,
-      price: document.getElementById("price").value,
-      image: document.getElementById("image").value || "https://via.placeholder.com/150",
-      desc: document.getElementById("desc").value
-    };
-    await db.collection(category).add(newItem);
-    form.reset();
+    const file = document.getElementById("imageFile").files[0];
+    const name = document.getElementById("name").value;
+    const price = document.getElementById("price").value;
+    const desc = document.getElementById("desc").value;
+
+    let imageURL = "https://via.placeholder.com/150";
+    if (file) {
+      const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
+      await storageRef.put(file);
+      imageURL = await storageRef.getDownloadURL();
+    }
+
+    await db.collection(category).add({ name, price, desc, image: imageURL });
+    addForm.reset();
     loadItems();
   });
 
+  // --- Prikaz itema ---
   async function loadItems() {
     const listDiv = document.getElementById("itemsList");
     listDiv.innerHTML = "<h4>Postojeće stavke</h4>";
@@ -84,8 +137,6 @@
     await db.collection(category).doc(id).delete();
     loadItems();
   }
-
-  loadItems();
 </script>
 </body>
 </html>
