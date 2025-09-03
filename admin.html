@@ -93,7 +93,7 @@
   let uploadedImageURL = "";
   const myWidget = cloudinary.createUploadWidget({
     cloudName: 'djnbsbare', // tvoj Cloudinary cloud name
-    uploadPreset: 'burger_upload' // naziv tvojeg upload preseta (unsigned)
+    uploadPreset: 'burgerhouse_admin' // naziv tvojeg upload preseta (unsigned)
   }, (error, result) => {
     if (!error && result && result.event === "success") {
       uploadedImageURL = result.info.secure_url;
@@ -153,3 +153,4 @@
 </script>
 </body>
 </html>
+
