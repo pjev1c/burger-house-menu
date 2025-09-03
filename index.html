@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Burger House Meni</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-light">
+
+  <div class="container text-center py-4">
+    <h2 class="mb-4">🍔 Burger House Meni</h2>
+    <div class="row justify-content-center">
+      <div class="col-6">
+        <div class="card shadow-lg" onclick="showMenu('food')">
+          <img src="https://via.placeholder.com/300x200?text=Hrana" class="card-img-top" alt="Hrana">
+          <div class="card-body"><h5 class="card-title">Hrana</h5></div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card shadow-lg" onclick="showMenu('drinks')">
+          <img src="https://via.placeholder.com/300x200?text=Piće" class="card-img-top" alt="Piće">
+          <div class="card-body"><h5 class="card-title">Piće</h5></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ovde ide meni -->
+    <div id="menu" class="mt-5"></div>
+  </div>
+
+<script>
+  // --- Firebase config (popuni svojim podacima iz Firebase-a) ---
+  const firebaseConfig = {
+  apiKey: "AIzaSyDqI-XnDj1zRNKweGg6yiRKAf8J8kgRrQo",
+  authDomain: "burger-house-ab51a.firebaseapp.com",
+  projectId: "burger-house-ab51a",
+  storageBucket: "burger-house-ab51a.appspot.com", // ispravljeno!
+  messagingSenderId: "31759588920",
+  appId: "1:31759588920:web:cbe71c854f3885073d50cd",
+  measurementId: "G-K4ZKX4RXP7"
+};
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  async function showMenu(category) {
+    const menuDiv = document.getElementById("menu");
+    menuDiv.innerHTML = `<h3 class="mb-3">${category === 'food' ? 'Hrana' : 'Piće'}</h3>`;
+
+    const snapshot = await db.collection(category).get();
+    if (snapshot.empty) {
+      menuDiv.innerHTML += "<p>Trenutno nema stavki u ovoj kategoriji.</p>";
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const item = doc.data();
+      menuDiv.innerHTML += `
+        <div class="card mb-3 shadow-sm">
+          <div class="row g-0">
+            <div class="col-4">
+              <img src="${item.image}" class="img-fluid rounded-start" alt="${item.name}">
+            </div>
+            <div class="col-8">
+              <div class="card-body">
+                <h5 class="card-title">${item.name} - ${item.price} RSD</h5>
+                <p class="card-text">${item.desc}</p>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+</script>
+
+</body>
+</html>
